@@ -1,0 +1,11 @@
+﻿{
+	"httpPort": 8080,
+	"httpToken": "",
+	"ports":
+	[
+		{
+			"endpoint": "office",
+			"serialDevice": "COM6",
+		},
+	],
+}
