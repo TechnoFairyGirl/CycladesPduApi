@@ -46,7 +46,7 @@ namespace CycladesPduApi
 
 				server.AddExactRoute("GET", $"/{endpoint}/outlets", (request, response) =>
 				{
-					if (request.Headers["authorization"] != $"Bearer {config.HttpToken}") 
+					if (config.HttpToken != null && request.Headers["authorization"] != $"Bearer {config.HttpToken}") 
 						throw new UnauthorizedAccessException();
 
 					lock (pdu) response.WriteBodyJson(CycladesPdu.Retry(10, i => pdu.GetOutletCount()));
@@ -54,7 +54,7 @@ namespace CycladesPduApi
 
 				server.AddRoute("GET", $@"/{endpoint}/outlet/(\d+)", (args, request, response) =>
 				{
-					if (request.Headers["authorization"] != $"Bearer {config.HttpToken}")
+					if (config.HttpToken != null && request.Headers["authorization"] != $"Bearer {config.HttpToken}")
 						throw new UnauthorizedAccessException();
 
 					var outlet = int.Parse(args[0]);
@@ -63,7 +63,7 @@ namespace CycladesPduApi
 
 				server.AddRoute("POST", $@"/{endpoint}/outlet/(\d+)", (args, request, response) =>
 				{
-					if (request.Headers["authorization"] != $"Bearer {config.HttpToken}")
+					if (config.HttpToken != null && request.Headers["authorization"] != $"Bearer {config.HttpToken}")
 						throw new UnauthorizedAccessException();
 
 					var outlet = int.Parse(args[0]);
