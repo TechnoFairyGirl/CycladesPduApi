@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace CycladesPduApi
 {
-	class CycladesPdu
+	sealed class CycladesPdu
 	{
 		public static T Retry<T>(int times, Func<int, T> func)
 		{
