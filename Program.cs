@@ -44,12 +44,16 @@ namespace CycladesPduApi
 				var endpoint = portMapping.Key;
 				var pdu = portMapping.Value;
 
+				pdu.Connect();
+
+				server.Log($"Connected to PDU on '{pdu.SerialPort}'. ({pdu.OutletCount} outlets)");
+
 				server.AddExactRoute("GET", $"/{endpoint}/outlets", (request, response) =>
 				{
 					if (config.HttpToken != null && request.Headers["authorization"] != $"Bearer {config.HttpToken}") 
 						throw new UnauthorizedAccessException();
 
-					lock (pdu) response.WriteBodyJson(CycladesPdu.Retry(10, i => pdu.GetOutletCount()));
+					lock (pdu) response.WriteBodyJson(pdu.OutletCount);
 				});
 
 				server.AddRoute("GET", $@"/{endpoint}/outlet/(\d+)", (args, request, response) =>
@@ -58,7 +62,7 @@ namespace CycladesPduApi
 						throw new UnauthorizedAccessException();
 
 					var outlet = int.Parse(args[0]);
-					lock (pdu) response.WriteBodyJson(CycladesPdu.Retry(10, i => pdu.GetOutletState(outlet)));
+					lock (pdu) response.WriteBodyJson(pdu.GetOutletState(outlet));
 				});
 
 				server.AddRoute("POST", $@"/{endpoint}/outlet/(\d+)", (args, request, response) =>
@@ -68,7 +72,7 @@ namespace CycladesPduApi
 
 					var outlet = int.Parse(args[0]);
 					var state = request.ReadBodyJson<bool>();
-					lock (pdu) CycladesPdu.Retry(10, i => pdu.SetOutletState(outlet, state));
+					lock (pdu) pdu.SetOutletState(outlet, state);
 
 					server.Log($"Outlet {outlet} turned {(state ? "on" : "off")}.");
 				});

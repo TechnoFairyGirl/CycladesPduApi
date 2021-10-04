@@ -11,7 +11,7 @@
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <LangVersion>8.0</LangVersion>
     <FileAlignment>512</FileAlignment>
-    <AutoGenerateBindingRedirects>false</AutoGenerateBindingRedirects>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <Deterministic>true</Deterministic>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
