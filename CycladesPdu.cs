@@ -86,7 +86,7 @@ namespace CycladesPduApi
 
 				if (reconnect && !connected) return;
 
-				port = new SerialPort(SerialPort);
+				port = new SerialPort(SerialPort, 9600);
 
 				port.DtrEnable = true;
 				port.RtsEnable = true;
