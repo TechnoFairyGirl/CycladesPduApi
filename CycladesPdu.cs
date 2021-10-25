@@ -158,6 +158,8 @@ namespace CycladesPduApi
 			}
 		}
 
+		const string getStateRegex = @"^ *(\d+)\t[^\t]*\t[^\t]*(ON|OFF)\t";
+
 		public bool GetOutletState(int outlet)
 		{
 			if (outlet < 1 || outlet > OutletCount)
@@ -167,10 +169,11 @@ namespace CycladesPduApi
 
 			foreach (var line in result)
 			{
-				var match = Regex.Match(line, @"\t[^\t]*(ON|OFF)\t");
+				var match = Regex.Match(line, getStateRegex);
 				if (!match.Success) continue;
+				if (int.Parse(match.Groups[1].Value) != outlet) continue;
 
-				return match.Groups[1].Value == "ON";
+				return match.Groups[2].Value == "ON";
 			}
 
 			throw new InvalidOperationException();
@@ -187,6 +190,33 @@ namespace CycladesPduApi
 
 			if (!result.Any(line => line.EndsWith($"Outlet turned {onOff}.")))
 				throw new InvalidOperationException();
+		}
+
+		public bool[] GetAllOutletStates()
+		{
+			var statesMap = new Dictionary<int, bool>();
+
+			var result = DoCommand($"status 1-{OutletCount}");
+
+			foreach (var line in result)
+			{
+				var match = Regex.Match(line, getStateRegex);
+				if (!match.Success) continue;
+
+				var outlet = int.Parse(match.Groups[1].Value);
+				var state = match.Groups[2].Value == "ON";
+
+				statesMap[outlet] = state;
+			}
+
+			if (statesMap.Count != OutletCount)
+				throw new InvalidOperationException();
+
+			var statesList = Enumerable.Range(1, OutletCount)
+				.Select(i => statesMap[i])
+				.ToArray();
+
+			return statesList;
 		}
 	}
 }

@@ -76,6 +76,14 @@ namespace CycladesPduApi
 
 					server.Log($"Outlet {outlet} turned {(state ? "on" : "off")}.");
 				});
+
+				server.AddExactRoute("GET", $@"/{endpoint}/outlet/all", (request, response) =>
+				{
+					if (config.HttpToken != null && request.Headers["authorization"] != $"Bearer {config.HttpToken}")
+						throw new UnauthorizedAccessException();
+
+					lock (pdu) response.WriteBodyJson(pdu.GetAllOutletStates());
+				});
 			}
 
 			server.Start();
