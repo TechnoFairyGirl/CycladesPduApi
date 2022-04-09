@@ -39,6 +39,14 @@ namespace CycladesPduApi
 
 			var server = new HttpServer(config.HttpPort);
 
+			server.AddRoute(null, null, (urlArgs, request, response) =>
+			{
+				if (config.HttpToken != null && request.Headers["authorization"] != $"Bearer {config.HttpToken}")
+					throw new UnauthorizedAccessException();
+
+				return true;
+			});
+
 			foreach (var portMapping in portMappings)
 			{
 				var endpoint = portMapping.Key;
@@ -50,27 +58,18 @@ namespace CycladesPduApi
 
 				server.AddExactRoute("GET", $"/{endpoint}/outlets", (request, response) =>
 				{
-					if (config.HttpToken != null && request.Headers["authorization"] != $"Bearer {config.HttpToken}") 
-						throw new UnauthorizedAccessException();
-
 					lock (pdu) response.WriteBodyJson(pdu.OutletCount);
 				});
 
-				server.AddRoute("GET", $@"/{endpoint}/outlet/(\d+)", (args, request, response) =>
+				server.AddRoute("GET", $@"/{endpoint}/outlet/(\d+)", (urlArgs, request, response) =>
 				{
-					if (config.HttpToken != null && request.Headers["authorization"] != $"Bearer {config.HttpToken}")
-						throw new UnauthorizedAccessException();
-
-					var outlet = int.Parse(args[0]);
+					var outlet = int.Parse(urlArgs[0]);
 					lock (pdu) response.WriteBodyJson(pdu.GetOutletState(outlet));
 				});
 
-				server.AddRoute("POST", $@"/{endpoint}/outlet/(\d+)", (args, request, response) =>
+				server.AddRoute("POST", $@"/{endpoint}/outlet/(\d+)", (urlArgs, request, response) =>
 				{
-					if (config.HttpToken != null && request.Headers["authorization"] != $"Bearer {config.HttpToken}")
-						throw new UnauthorizedAccessException();
-
-					var outlet = int.Parse(args[0]);
+					var outlet = int.Parse(urlArgs[0]);
 					var state = request.ReadBodyJson<bool>();
 					lock (pdu) pdu.SetOutletState(outlet, state);
 
@@ -79,9 +78,6 @@ namespace CycladesPduApi
 
 				server.AddExactRoute("GET", $@"/{endpoint}/outlet/all", (request, response) =>
 				{
-					if (config.HttpToken != null && request.Headers["authorization"] != $"Bearer {config.HttpToken}")
-						throw new UnauthorizedAccessException();
-
 					lock (pdu) response.WriteBodyJson(pdu.GetAllOutletStates());
 				});
 			}
