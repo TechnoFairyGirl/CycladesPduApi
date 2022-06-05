@@ -33,10 +33,6 @@ namespace CycladesPduApi
 			var configPath = args.Length >= 1 ? args[0] : Path.Combine(Path.GetDirectoryName(exePath), "config.json");
 			config = JsonConvert.DeserializeObject<Config>(File.ReadAllText(configPath));
 
-			var portMappings = config.Ports.ToDictionary(
-				portMapping => portMapping.Endpoint,
-				portMapping => new CycladesPdu(portMapping.SerialDevice));
-
 			var server = new HttpServer(config.HttpPort);
 
 			server.AddRoute(null, null, (urlArgs, request, response) =>
@@ -47,10 +43,10 @@ namespace CycladesPduApi
 				return true;
 			});
 
-			foreach (var portMapping in portMappings)
+			foreach (var portMapping in config.Ports)
 			{
-				var endpoint = portMapping.Key;
-				var pdu = portMapping.Value;
+				var endpoint = portMapping.Endpoint;
+				var pdu = new CycladesPdu(portMapping.SerialDevice);
 
 				pdu.Connect();
 
@@ -58,13 +54,17 @@ namespace CycladesPduApi
 
 				server.AddExactRoute("GET", $"/{endpoint}/outlets", (request, response) =>
 				{
-					lock (pdu) response.WriteBodyJson(pdu.OutletCount);
+					int outletCount;
+					lock (pdu) outletCount = pdu.OutletCount;
+					response.WriteBodyJson(outletCount);
 				});
 
 				server.AddRoute("GET", $@"/{endpoint}/outlet/(\d+)", (urlArgs, request, response) =>
 				{
 					var outlet = int.Parse(urlArgs[0]);
-					lock (pdu) response.WriteBodyJson(pdu.GetOutletState(outlet));
+					bool outletState;
+					lock (pdu) outletState = pdu.GetOutletState(outlet);
+					response.WriteBodyJson(outletState);
 				});
 
 				server.AddRoute("POST", $@"/{endpoint}/outlet/(\d+)", (urlArgs, request, response) =>
@@ -78,7 +78,9 @@ namespace CycladesPduApi
 
 				server.AddExactRoute("GET", $@"/{endpoint}/outlet/all", (request, response) =>
 				{
-					lock (pdu) response.WriteBodyJson(pdu.GetAllOutletStates());
+					bool[] outletStates;
+					lock (pdu) outletStates = pdu.GetAllOutletStates();
+					response.WriteBodyJson(outletStates);
 				});
 			}
 
